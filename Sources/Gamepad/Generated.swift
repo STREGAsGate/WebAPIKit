@@ -362,22 +362,14 @@ public class GamepadTouch: JSBridgedClass {
     public var surfaceDimensions: Uint32Array?
 }
 
-public class Navigator: JSBridgedClass {
-    @inlinable public class var constructor: JSFunction? { JSObject.global[Strings.Navigator].function }
-
-    public let jsObject: JSObject
-
-    public required init(unsafelyWrapping jsObject: JSObject) {
-        self.jsObject = jsObject
-    }
-
-    @inlinable public func getGamepads() -> [Gamepad?] {
+public extension Navigator {
+    @inlinable func getGamepads() -> [Gamepad?] {
         let this = jsObject
-        return this[Strings.getGamepads].function!(this: this, arguments: []).fromJSValue()!
+        let jsArray = JSArray(unsafelyWrapping: this[Strings.getGamepads].function!(this: this, arguments: []).object!)
+        return jsArray.map({Gamepad(from: $0)})
     }
 }
 
-public protocol WindowEventHandlers: JSBridgedClass {}
 public extension WindowEventHandlers {
     @inlinable var ongamepadconnected: EventHandler {
         get { ClosureAttribute1Optional[Strings.ongamepadconnected, in: jsObject] }
