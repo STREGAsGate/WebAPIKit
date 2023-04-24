@@ -1170,7 +1170,7 @@ public extension WebGLRenderingContextBase {
 
     @inlinable func getUniformLocation(program: WebGLProgram, name: String) -> WebGLUniformLocation? {
         let this = jsObject
-        return this[Strings.getUniformLocation].function!(this: this, arguments: [_toJSValue(program), _toJSValue(name)]).fromJSValue()!
+        return this[Strings.getUniformLocation].function!(this: this, arguments: [_toJSValue(program), _toJSValue(name)]).fromJSValue()
     }
 
     @inlinable func getVertexAttrib(index: GLuint, pname: GLenum) -> JSValue {
