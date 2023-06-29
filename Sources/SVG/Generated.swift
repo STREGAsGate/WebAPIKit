@@ -2,6 +2,7 @@
 
 import DOM
 import ECMAScript
+import JavaScriptEventLoop
 import JavaScriptKit
 import WebAPIBase
 
@@ -564,9 +565,9 @@ public class SVGElement: Element, GlobalEventHandlers, SVGElementInstance, HTMLO
 
 public protocol SVGElementInstance: JSBridgedClass {}
 public extension SVGElementInstance {
-    @inlinable var correspondingElement: SVGElement? { jsObject[Strings.correspondingElement].fromJSValue()! }
+    @inlinable var correspondingElement: SVGElement? { jsObject[Strings.correspondingElement].fromJSValue() }
 
-    @inlinable var correspondingUseElement: SVGUseElement? { jsObject[Strings.correspondingUseElement].fromJSValue()! }
+    @inlinable var correspondingUseElement: SVGUseElement? { jsObject[Strings.correspondingUseElement].fromJSValue() }
 }
 
 public class SVGEllipseElement: SVGGeometryElement {
@@ -710,12 +711,12 @@ public class SVGGraphicsElement: SVGElement, SVGTests {
 
     @inlinable public func getCTM() -> DOMMatrix? {
         let this = jsObject
-        return this[Strings.getCTM].function!(this: this, arguments: []).fromJSValue()!
+        return this[Strings.getCTM].function!(this: this, arguments: []).fromJSValue()
     }
 
     @inlinable public func getScreenCTM() -> DOMMatrix? {
         let this = jsObject
-        return this[Strings.getScreenCTM].function!(this: this, arguments: []).fromJSValue()!
+        return this[Strings.getScreenCTM].function!(this: this, arguments: []).fromJSValue()
     }
 }
 
@@ -1910,7 +1911,7 @@ public class SVGTransformList: JSBridgedClass {
 
     @inlinable public func consolidate() -> SVGTransform? {
         let this = jsObject
-        return this[Strings.consolidate].function!(this: this, arguments: []).fromJSValue()!
+        return this[Strings.consolidate].function!(this: this, arguments: []).fromJSValue()
     }
 }
 

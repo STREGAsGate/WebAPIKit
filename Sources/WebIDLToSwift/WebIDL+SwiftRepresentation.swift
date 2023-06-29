@@ -54,7 +54,7 @@ extension IDLAttribute: SwiftRepresentable, Initializable {
 
                 return """
                 @inlinable public\(raw: ModuleState.static ? " static" : "") var \(name): \(idlType) {
-                    get { jsObject[\(ModuleState.source(for: name))].fromJSValue()! }
+                    get { jsObject[\(ModuleState.source(for: name))]\(idlType.fromJSValue) }
                     \(readonly ? "" : setter)
                 }
                 """
@@ -222,7 +222,6 @@ extension MergedInterface: SwiftRepresentable {
             }.joined(separator: "\n\n")
         }
 
-        let inheritance = (parentClasses.isEmpty ? ["JSBridgedClass"] : parentClasses) + mixins
         // Allow cross-module subclassing with `open` access modifier for classes that require this.
         let openClasses = [
             "DocumentFragment",
@@ -237,29 +236,32 @@ extension MergedInterface: SwiftRepresentable {
         ]
         let access: SwiftSource = openClasses.contains(name) ? "open" : "public"
 
-        let globalAccessor: SwiftSource
-        if global {
-            globalAccessor = """
-            @inlinable public static var global: \(name) {
-                \(name)(unsafelyWrapping: JSObject.global)
-            }
-            """
+        let header: SwiftSource
+        if partial {
+            header = "public extension \(name)"
         } else {
-            globalAccessor = ""
+            let inheritance = (parentClasses.isEmpty ? ["JSBridgedClass"] : parentClasses) + mixins
+            header = "\(access) class \(name): \(sequence: inheritance.map(SwiftSource.init(_:)))"
         }
 
         return """
-        \(access) class \(name): \(sequence: inheritance.map(SwiftSource.init(_:))) {
-            @inlinable \(access)\(parentClasses.isEmpty ? "" : " override") class var constructor: JSFunction? { \(constructor) }
+        \(header) {
+            \(partial ? "" : """
+                @inlinable \(access)\(parentClasses.isEmpty ? "" : " override") class var constructor: JSFunction? { \(constructor) }
 
-            \(parentClasses.isEmpty ? "public let jsObject: JSObject" : "")
+                \(parentClasses.isEmpty ? "public let jsObject: JSObject" : "")
 
-            \(globalAccessor)
+                \(global ? """
+                    @inlinable public static var global: \(name) {
+                        \(name)(unsafelyWrapping: JSObject.global)
+                    }
+                """ : "")
 
-            public required init(unsafelyWrapping jsObject: JSObject) {
-                \(memberInits.joined(separator: "\n"))
-                \(parentClasses.isEmpty ? "self.jsObject = jsObject" : "super.init(unsafelyWrapping: jsObject)")
-            }
+                public required init(unsafelyWrapping jsObject: JSObject) {
+                    \(memberInits.joined(separator: "\n"))
+                    \(parentClasses.isEmpty ? "self.jsObject = jsObject" : "super.init(unsafelyWrapping: jsObject)")
+                }
+            """)
 
             \(body)
         }
@@ -305,7 +307,7 @@ extension MergedMixin: SwiftRepresentable {
     var swiftRepresentation: SwiftSource {
         ModuleState.withScope(.instance(constructor: nil, this: "jsObject", className: "\(name)", inProtocol: true)) {
             """
-            public protocol \(name): JSBridgedClass {}
+            \(partial ? "" : "public protocol \(name): JSBridgedClass {}")
             public extension \(name) {
                 \(members.map(toSwift).joined(separator: "\n\n"))
             }
@@ -504,7 +506,8 @@ extension IDLOperation: SwiftRepresentable, Initializable {
     }
 
     private var defaultRepresentation: SwiftSource {
-        var returnType = idlType!.swiftRepresentation
+        guard let idlType = idlType else { fatalError() }
+        var returnType = idlType.swiftRepresentation
         if returnType == ModuleState.className {
             returnType = "Self"
         }
@@ -515,10 +518,10 @@ extension IDLOperation: SwiftRepresentable, Initializable {
         let (prep, call) = defaultBody
 
         let body: SwiftSource
-        if idlType?.swiftRepresentation.source == "Void" {
+        if idlType.swiftRepresentation.source == "Void" {
             body = "_ = \(call)"
         } else {
-            body = "return \(call).fromJSValue()!"
+            body = "return \(call)\(idlType.fromJSValue)"
         }
 
         return """
@@ -560,7 +563,7 @@ extension AsyncOperation: SwiftRepresentable, Initializable {
         if returnType.swiftRepresentation.source == "Void" {
             result = "_ = try await _promise.value"
         } else {
-            result = "return try await _promise.value.fromJSValue()!"
+            result = "return try await _promise.value\(returnType.fromJSValue)"
         }
         return """
         @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
@@ -581,14 +584,15 @@ extension SubscriptOperation: SwiftRepresentable, Initializable {
         if keyType == "UInt32" {
             keyType = "Int"
         }
+        let idlType = getter.idlType!
 
-        let getterSource: SwiftSource = "jsObject[key].fromJSValue()\(getter.idlType!.nullable ? "" : "!")"
+        let getterSource: SwiftSource = "jsObject[key]\(idlType.fromJSValue)"
 
         if setter != nil {
             assert(setter!.arguments.count == 2)
             assert(setter!.arguments[0].idlType == getter.arguments[0].idlType)
             return """
-            @inlinable public subscript(key: \(keyType)) -> \(getter.idlType!) {
+            @inlinable public subscript(key: \(keyType)) -> \(idlType) {
                 get {
                     \(getterSource)
                 }
@@ -600,7 +604,7 @@ extension SubscriptOperation: SwiftRepresentable, Initializable {
         }
 
         return """
-        @inlinable public subscript(key: \(keyType)) -> \(getter.idlType!) {
+        @inlinable public subscript(key: \(keyType)) -> \(idlType) {
             \(getterSource)
         }
         """
@@ -641,6 +645,14 @@ extension IDLType: SwiftRepresentable {
             return "\(baseType)?"
         }
         return baseType
+    }
+
+    var fromJSValue: SwiftSource {
+        if nullable {
+            return ".fromJSValue()"
+        } else {
+            return ".fromJSValue()!"
+        }
     }
 
     var baseType: SwiftSource {

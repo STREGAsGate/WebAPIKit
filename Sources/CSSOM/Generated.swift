@@ -2,6 +2,7 @@
 
 import DOM
 import ECMAScript
+import JavaScriptEventLoop
 import JavaScriptKit
 import WebAPIBase
 
@@ -478,6 +479,8 @@ public class CSSImportRule: CSSRule {
         _href = ReadonlyAttribute(jsObject: jsObject, name: Strings.href)
         _media = ReadonlyAttribute(jsObject: jsObject, name: Strings.media)
         _styleSheet = ReadonlyAttribute(jsObject: jsObject, name: Strings.styleSheet)
+        _layerName = ReadonlyAttribute(jsObject: jsObject, name: Strings.layerName)
+        _supportsText = ReadonlyAttribute(jsObject: jsObject, name: Strings.supportsText)
         super.init(unsafelyWrapping: jsObject)
     }
 
@@ -488,7 +491,13 @@ public class CSSImportRule: CSSRule {
     public var media: MediaList
 
     @ReadonlyAttribute
-    public var styleSheet: CSSStyleSheet
+    public var styleSheet: CSSStyleSheet?
+
+    @ReadonlyAttribute
+    public var layerName: String?
+
+    @ReadonlyAttribute
+    public var supportsText: String?
 }
 
 public class CSSKeywordValue: CSSStyleValue {
@@ -1148,7 +1157,7 @@ public class CSSRuleList: JSBridgedClass {
 
     @inlinable public func item(index: UInt32) -> CSSRule? {
         let this = jsObject
-        return this[Strings.item].function!(this: this, arguments: [_toJSValue(index)]).fromJSValue()!
+        return this[Strings.item].function!(this: this, arguments: [_toJSValue(index)]).fromJSValue()
     }
 
     @ReadonlyAttribute
@@ -1594,7 +1603,7 @@ public class CaretPosition: JSBridgedClass {
 
     @inlinable public func getClientRect() -> DOMRect? {
         let this = jsObject
-        return this[Strings.getClientRect].function!(this: this, arguments: []).fromJSValue()!
+        return this[Strings.getClientRect].function!(this: this, arguments: []).fromJSValue()
     }
 }
 
@@ -1640,7 +1649,6 @@ public class ConvertCoordinateOptions: BridgedDictionary {
     public var toBox: CSSBoxType
 }
 
-public protocol DocumentOrShadowRoot: JSBridgedClass {}
 public extension DocumentOrShadowRoot {
     @inlinable var styleSheets: StyleSheetList { jsObject[Strings.styleSheets].fromJSValue()! }
 
@@ -1682,7 +1690,7 @@ public extension GeometryUtils {
 
 public protocol LinkStyle: JSBridgedClass {}
 public extension LinkStyle {
-    @inlinable var sheet: CSSStyleSheet? { jsObject[Strings.sheet].fromJSValue()! }
+    @inlinable var sheet: CSSStyleSheet? { jsObject[Strings.sheet].fromJSValue() }
 }
 
 public class MediaList: JSBridgedClass {
@@ -1708,7 +1716,7 @@ public class MediaList: JSBridgedClass {
 
     @inlinable public func item(index: UInt32) -> String? {
         let this = jsObject
-        return this[Strings.item].function!(this: this, arguments: [_toJSValue(index)]).fromJSValue()!
+        return this[Strings.item].function!(this: this, arguments: [_toJSValue(index)]).fromJSValue()
     }
 
     @inlinable public func appendMedium(medium: String) {
@@ -1967,9 +1975,10 @@ public class StylePropertyMapReadOnly: JSBridgedClass, Sequence {
         ValueIterableIterator(sequence: self)
     }
 
-    @inlinable public func get(property: String) -> JSValue {
+    // TODO: remove patch once https://github.com/w3c/css-houdini-drafts/issues/1095 is fixed
+    @inlinable public func get(property: String) -> CSSStyleValue? {
         let this = jsObject
-        return this[Strings.get].function!(this: this, arguments: [_toJSValue(property)]).fromJSValue()!
+        return this[Strings.get].function!(this: this, arguments: [_toJSValue(property)]).fromJSValue()
     }
 
     @inlinable public func getAll(property: String) -> [CSSStyleValue] {
@@ -2040,7 +2049,7 @@ public class StyleSheetList: JSBridgedClass {
 
     @inlinable public func item(index: UInt32) -> CSSStyleSheet? {
         let this = jsObject
-        return this[Strings.item].function!(this: this, arguments: [_toJSValue(index)]).fromJSValue()!
+        return this[Strings.item].function!(this: this, arguments: [_toJSValue(index)]).fromJSValue()
     }
 
     @ReadonlyAttribute
@@ -2243,6 +2252,7 @@ public class VisualViewport: EventTarget {
     @usableFromInline static let item: JSString = "item"
     @usableFromInline static let kHz: JSString = "kHz"
     @usableFromInline static let l: JSString = "l"
+    @usableFromInline static let layerName: JSString = "layerName"
     @usableFromInline static let left: JSString = "left"
     @usableFromInline static let length: JSString = "length"
     @usableFromInline static let lh: JSString = "lh"
@@ -2313,6 +2323,7 @@ public class VisualViewport: EventTarget {
     @usableFromInline static let styleSheet: JSString = "styleSheet"
     @usableFromInline static let styleSheets: JSString = "styleSheets"
     @usableFromInline static let sub: JSString = "sub"
+    @usableFromInline static let supportsText: JSString = "supportsText"
     @usableFromInline static let svb: JSString = "svb"
     @usableFromInline static let svh: JSString = "svh"
     @usableFromInline static let svi: JSString = "svi"

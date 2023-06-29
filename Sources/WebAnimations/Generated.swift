@@ -2,6 +2,7 @@
 
 import DOM
 import ECMAScript
+import JavaScriptEventLoop
 import JavaScriptKit
 import WebAPIBase
 import WebAudio
@@ -189,12 +190,8 @@ public class AnimationTimeline: JSBridgedClass {
     public let jsObject: JSObject
 
     public required init(unsafelyWrapping jsObject: JSObject) {
-        _currentTime = ReadonlyAttribute(jsObject: jsObject, name: Strings.currentTime)
         self.jsObject = jsObject
     }
-
-    @ReadonlyAttribute
-    public var currentTime: Double?
 }
 
 public class BaseComputedKeyframe: BridgedDictionary {
@@ -340,7 +337,6 @@ public class ComputedEffectTiming: BridgedDictionary {
     public var currentIteration: Double?
 }
 
-public protocol DocumentOrShadowRoot: JSBridgedClass {}
 public extension DocumentOrShadowRoot {
     @inlinable func getAnimations() -> [Animation] {
         let this = jsObject
@@ -614,7 +610,6 @@ public enum PlaybackDirection: JSString, JSValueCompatible {
     @usableFromInline static let composite: JSString = "composite"
     @usableFromInline static let computedOffset: JSString = "computedOffset"
     @usableFromInline static let currentIteration: JSString = "currentIteration"
-    @usableFromInline static let currentTime: JSString = "currentTime"
     @usableFromInline static let delay: JSString = "delay"
     @usableFromInline static let direction: JSString = "direction"
     @usableFromInline static let duration: JSString = "duration"

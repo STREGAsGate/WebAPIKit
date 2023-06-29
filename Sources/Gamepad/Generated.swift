@@ -2,6 +2,7 @@
 
 import DOM
 import ECMAScript
+import JavaScriptEventLoop
 import JavaScriptKit
 import WebAPIBase
 
@@ -60,7 +61,7 @@ public class Gamepad: JSBridgedClass {
     public var touchEvents: [GamepadTouch]?
 
     @ReadonlyAttribute
-    public var vibrationActuator: GamepadHapticActuator
+    public var vibrationActuator: GamepadHapticActuator?
 }
 
 public class GamepadButton: JSBridgedClass {
